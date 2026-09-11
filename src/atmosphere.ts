@@ -55,16 +55,18 @@ export class Atmosphere {
         vec3 base=mix(vec3(.43,.52,.64),vec3(1.15,1.16,1.16),clamp(h*.48+(1.-shadow)*.65,0.,1.));
         base+=vec3(1.,.92,.79)*towardSun*.45*(1.-shadow);
         base=mix(base,base*vec3(1.1,.67,.4),sunset*.7);
-        base=mix(base,base*vec3(.13,.2,.33),night*.92);
+        base=mix(base,base*vec3(.035,.06,.10),night*.98);
         float opacity=1.-exp(-d*stride*.007);
         light+=trans*opacity*base;trans*=1.-opacity;
       }
     }
     float distantFade=exp(-start*.000025);gl_FragColor=vec4(light*distantFade,(1.-trans)*distantFade);
   }`});
-  this.composite=new THREE.ShaderMaterial({uniforms:{sceneMap:{value:this.sceneTarget.texture},cloudMap:{value:this.cloudTarget.texture},sunScreen:{value:new THREE.Vector3()},sunset:{value:0},night:{value:0}},vertexShader,depthWrite:false,depthTest:false,
-  fragmentShader:`varying vec2 vUv;uniform sampler2D sceneMap,cloudMap;uniform vec3 sunScreen;uniform float sunset,night;
-  void main(){vec3 color=texture2D(sceneMap,vUv).rgb;vec4 cloud=texture2D(cloudMap,vUv);color=color*(1.-cloud.a)+cloud.rgb;
+  this.composite=new THREE.ShaderMaterial({uniforms:{sceneMap:{value:this.sceneTarget.texture},cloudMap:{value:this.cloudTarget.texture},cloudTexel:{value:new THREE.Vector2()},sunScreen:{value:new THREE.Vector3()},sunset:{value:0},night:{value:0}},vertexShader,depthWrite:false,depthTest:false,
+  fragmentShader:`varying vec2 vUv;uniform sampler2D sceneMap,cloudMap;uniform vec2 cloudTexel;uniform vec3 sunScreen;uniform float sunset,night;
+  void main(){vec3 color=texture2D(sceneMap,vUv).rgb;vec4 cloud=texture2D(cloudMap,vUv)*4.;
+   cloud+=(texture2D(cloudMap,vUv+vec2(cloudTexel.x,0.))+texture2D(cloudMap,vUv-vec2(cloudTexel.x,0.))+texture2D(cloudMap,vUv+vec2(0.,cloudTexel.y))+texture2D(cloudMap,vUv-vec2(0.,cloudTexel.y)))*2.;
+   cloud+=texture2D(cloudMap,vUv+cloudTexel)+texture2D(cloudMap,vUv-cloudTexel)+texture2D(cloudMap,vUv+vec2(cloudTexel.x,-cloudTexel.y))+texture2D(cloudMap,vUv+vec2(-cloudTexel.x,cloudTexel.y));cloud/=16.;color=color*(1.-cloud.a)+cloud.rgb;
    float halo=exp(-length((vUv-sunScreen.xy)*vec2(1.6,1.))*7.)*sunScreen.z*(1.-night)*(1.-cloud.a);
    color+=vec3(1.,.67,.33)*halo*.055;
    float vignette=smoothstep(.85,.25,length(vUv-.5));color*=mix(.91,1.,vignette);
@@ -73,7 +75,7 @@ export class Atmosphere {
    #include <colorspace_fragment>
   }`});this.quad=new FullScreenQuad(this.cloud);this.resize();
  }
- resize(low=false){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2());this.sceneTarget.setSize(size.x,size.y);this.cloudTarget.setSize(Math.max(1,Math.floor(size.x*(low?.4:.7))),Math.max(1,Math.floor(size.y*(low?.4:.7))));this.cloud.uniforms.steps.value=low?32:56;}
+ resize(low=false){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2());this.sceneTarget.setSize(size.x,size.y);this.cloudTarget.setSize(Math.max(1,Math.floor(size.x*(low?.4:.7))),Math.max(1,Math.floor(size.y*(low?.4:.7))));this.cloud.uniforms.steps.value=low?32:56;this.composite.uniforms.cloudTexel.value.set(1.4/this.cloudTarget.width,1.4/this.cloudTarget.height);}
  render(scene:THREE.Scene,camera:THREE.PerspectiveCamera,dt:number,weather:{cloud:number;wind:number;direction:number;day:boolean},sun:THREE.Vector3,sunset:boolean){
   this.time+=dt;this.cover=THREE.MathUtils.damp(this.cover,.06+weather.cloud/100*.91,.45,dt);this.drift.x+=Math.sin(weather.direction*Math.PI/180)*weather.wind*dt*.5;this.drift.y-=Math.cos(weather.direction*Math.PI/180)*weather.wind*dt*.5;
   const u=this.cloud.uniforms;u.inverseProjection.value.copy(camera.projectionMatrixInverse);u.cameraWorld.value.copy(camera.matrixWorld);u.eye.value.copy(camera.position);u.coverage.value=this.cover;u.night.value=weather.day?0:1;u.sunset.value=sunset?1:0;u.sunDirection.value.copy(sun);
