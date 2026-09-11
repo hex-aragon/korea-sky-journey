@@ -44,7 +44,7 @@ The initial models were generated using the community Blender MCP server version
 - Local storage contains only visited city indexes. Browser storage can be unavailable without breaking the game.
 - WebGL context loss is handled with a recovery message. Rendering pauses logically when focus is lost. Frame deltas are bounded.
 
-Known limitations: GitHub Pages does not provide arbitrary response-header configuration, so CSP is delivered via HTML meta. Browser interaction/visual QA still requires an unlocked desktop. Automated tests cover simulation direction, wind, terrain clearance, altitude limits, weather validation and model integrity, but are not a guarantee that the application has no vulnerabilities.
+Known limitations: GitHub Pages does not provide arbitrary response-header configuration, so CSP is delivered via HTML meta. In-app browser checks cover start, automatic flight, city changes, weather presets, camera modes, pause/resume and high-altitude flight. Automated tests cover simulation direction, wind, terrain clearance, altitude limits, weather validation and model integrity, but are not a guarantee that the application has no vulnerabilities.
 
 ## Attribution
 
