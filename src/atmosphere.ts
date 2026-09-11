@@ -17,8 +17,16 @@ export class Atmosphere {
   this.sceneTarget=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4});this.sceneTarget.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
   this.cloudTarget=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:false});
   const size=64,data=new Uint8Array(size**3),noise=new ImprovedNoise();let i=0;
+  // Blend opposite samples to make the repeat volume seamless. Abrupt edges
+  // in the old non-periodic volume produced rectangular cloud walls.
+  const smooth=(v:number)=>v*v*(3-2*v);
+  const periodic=(x:number,y:number,z:number,scale:number)=>{
+   const u=smooth(x/size),v=smooth(y/size),w=smooth(z/size);let sum=0;
+   for(let a=0;a<2;a++)for(let b=0;b<2;b++)for(let c=0;c<2;c++)sum+=noise.noise((x-a*size)/scale,(y-b*size)/scale,(z-c*size)/scale)*(a?u:1-u)*(b?v:1-v)*(c?w:1-w);
+   return sum;
+  };
   for(let z=0;z<size;z++)for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-   const v=noise.noise(x/10,y/10,z/10)*.6+noise.noise(x/4,y/4,z/4)*.27+noise.noise(x/1.6,y/1.6,z/1.6)*.13;data[i++]=Math.round(THREE.MathUtils.clamp(v*.8+.5,0,1)*255);
+   const v=periodic(x,y,z,13)*.65+periodic(x,y,z,6)*.25+periodic(x,y,z,2.8)*.1;data[i++]=Math.round(THREE.MathUtils.clamp(v*.9+.5,0,1)*255);
   }
   const tex=new THREE.Data3DTexture(data,size,size,size);tex.format=THREE.RedFormat;tex.minFilter=tex.magFilter=THREE.LinearFilter;tex.wrapS=tex.wrapT=tex.wrapR=THREE.RepeatWrapping;tex.unpackAlignment=1;tex.needsUpdate=true;
   const vertexShader=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
@@ -26,15 +34,15 @@ export class Atmosphere {
   fragmentShader:`precision highp sampler3D;
   varying vec2 vUv;uniform sampler2D depthMap;uniform sampler3D noiseMap;uniform mat4 inverseProjection,cameraWorld;uniform vec3 eye,sunDirection;uniform float coverage,night,sunset;uniform vec2 drift;uniform int steps;
   float density(vec3 p){
-    float h=(p.y-850.)/1050.;if(h<0.||h>1.)return 0.;
-    vec3 q=(p+vec3(drift.x,0.,drift.y))*.000085;
+    float h=(p.y-1200.)/1500.;if(h<0.||h>1.)return 0.;
+    vec3 q=(p+vec3(drift.x,0.,drift.y))*.00011;
     float broad=texture(noiseMap,q).r;
     float detail=texture(noiseMap,q*3.1+vec3(.1,.2,.3)).r;
     float shape=broad*.62+detail*.38;
     float profile=smoothstep(0.,.14,h)*(1.-smoothstep(.48,1.,h));
-    float threshold=mix(.66,.42,coverage)+h*.18-.065;
+    float threshold=mix(.65,.39,coverage)+h*.15-.045;
     float patchNoise=texture(noiseMap,vec3(q.x*.85,.36,q.z*.85)).r;
-    float patchThreshold=mix(.60,.35,coverage);
+    float patchThreshold=mix(.59,.32,coverage);
     float coverageMask=smoothstep(patchThreshold,patchThreshold+.12,patchNoise);
     return clamp((shape-threshold)*8.,0.,1.)*profile*coverageMask;
   }
@@ -42,9 +50,9 @@ export class Atmosphere {
     vec4 v=inverseProjection*vec4(vUv*2.-1.,1.,1.);vec3 ray=normalize((cameraWorld*vec4(normalize(v.xyz/v.w),0.)).xyz);
     float depth=texture2D(depthMap,vUv).r;
     vec4 world=cameraWorld*inverseProjection*vec4(vUv*2.-1.,depth*2.-1.,1.);float sceneDistance=depth>.999999?45000.:length(world.xyz/world.w-eye);
-    if(abs(ray.y)<.0001){gl_FragColor=vec4(0.);return;}
-    float a=(850.-eye.y)/ray.y,b=(1900.-eye.y)/ray.y;
-    float start=max(0.,min(a,b)),end=min(min(max(a,b),sceneDistance),22000.);
+    float ry=abs(ray.y)<0.0001?0.0001:ray.y;
+    float a=(1200.-eye.y)/ry,b=(2700.-eye.y)/ry;
+    float start=max(0.,min(a,b)),end=min(min(max(a,b),sceneDistance),16000.);
     if(end<=start){gl_FragColor=vec4(0.);return;}
     float stride=(end-start)/float(steps),jitter=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);
     float trans=1.;vec3 light=vec3(0.);
@@ -54,16 +62,16 @@ export class Atmosphere {
       vec3 p=eye+ray*(start+(float(i)+jitter)*stride);float d=density(p);
       if(d>.002){
         float shadow=density(p+sunDirection*160.)*.7+density(p+sunDirection*420.)*.3;
-        float h=clamp((p.y-850.)/1050.,0.,1.);
-        vec3 base=mix(vec3(.36,.47,.64),vec3(1.35,1.32,1.25),clamp(h*.56+(1.-shadow)*.62,0.,1.));
+        float h=clamp((p.y-1200.)/1500.,0.,1.);
+        vec3 base=mix(vec3(.28,.39,.56),vec3(1.3,1.34,1.39),clamp(h*.56+(1.-shadow)*.62,0.,1.));
         base+=vec3(1.,.92,.79)*towardSun*.75*(1.-shadow);
         base=mix(base,base*vec3(1.15,.64,.38),sunset*.8);
         base=mix(base,base*vec3(.035,.06,.10),night*.98);
-        float opacity=1.-exp(-d*stride*.007);
+        float opacity=1.-exp(-d*stride*.0045);
         light+=trans*opacity*base;trans*=1.-opacity;
       }
     }
-    float distantFade=exp(-start*.000025);gl_FragColor=vec4(light*distantFade,(1.-trans)*distantFade);
+    float distantFade=exp(-start*.000065);gl_FragColor=vec4(light*distantFade,(1.-trans)*distantFade);
   }`});
   this.composite=new THREE.ShaderMaterial({uniforms:{sceneMap:{value:this.sceneTarget.texture},cloudMap:{value:this.cloudTarget.texture},cloudTexel:{value:new THREE.Vector2()},sunScreen:{value:new THREE.Vector3()},sunset:{value:0},night:{value:0}},vertexShader,depthWrite:false,depthTest:false,
   fragmentShader:`varying vec2 vUv;uniform sampler2D sceneMap,cloudMap;uniform vec2 cloudTexel;uniform vec3 sunScreen;uniform float sunset,night;
@@ -72,7 +80,7 @@ export class Atmosphere {
    cloud+=texture2D(cloudMap,vUv+cloudTexel)+texture2D(cloudMap,vUv-cloudTexel)+texture2D(cloudMap,vUv+vec2(cloudTexel.x,-cloudTexel.y))+texture2D(cloudMap,vUv+vec2(-cloudTexel.x,cloudTexel.y));cloud/=16.;color=color*(1.-cloud.a)+cloud.rgb;
    float halo=exp(-length((vUv-sunScreen.xy)*vec2(1.6,1.))*7.)*sunScreen.z*(1.-night)*(1.-cloud.a);
    color+=vec3(1.,.67,.33)*halo*.055;
-   float vignette=smoothstep(.85,.25,length(vUv-.5));color*=mix(.91,1.,vignette);
+   float vignette=1.-smoothstep(.25,.85,length(vUv-.5));color*=mix(.91,1.,vignette);
    gl_FragColor=vec4(color,1.);
    #include <tonemapping_fragment>
    #include <colorspace_fragment>

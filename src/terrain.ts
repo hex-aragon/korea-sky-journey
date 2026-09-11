@@ -9,7 +9,7 @@ export function terrainHeight(x:number,z:number):number {
  const px=(x-minX)/18200*1024,pz=(z-minZ)/23100*1024;
  if(px<0||pz<0||px>=1024||pz>=1024)return -4;
  const ix=Math.floor(px),iz=Math.floor(pz),fx=px-ix,fz=pz-iz;
- const sample=(dx:number,dz:number)=>Math.max(-10,elevation![(iz+dz)*1025+ix+dx])*.12;
+ const sample=(dx:number,dz:number)=>Math.max(-500,elevation![(iz+dz)*1025+ix+dx])*.12;
  return THREE.MathUtils.lerp(THREE.MathUtils.lerp(sample(0,0),sample(1,0),fx),THREE.MathUtils.lerp(sample(0,1),sample(1,1),fx),fz);
 }
 export async function loadTerrain(scene:THREE.Scene){
@@ -18,19 +18,24 @@ export async function loadTerrain(scene:THREE.Scene){
  const map=await new THREE.TextureLoader().loadAsync(import.meta.env.BASE_URL+'geography/korea-satellite.webp');map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=8;
  const material=new THREE.MeshStandardMaterial({map,roughness:.98,metalness:0});
  material.onBeforeCompile=shader=>{
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition;').replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=position;');
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition;\nfloat groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}')
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition; varying vec3 terrainNormal;').replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=position;terrainNormal=normal;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition; varying vec3 terrainNormal;\nfloat groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}')
   .replace('#include <map_fragment>',`#include <map_fragment>
-    float grain=groundHash(floor(terrainPosition.xz*1.1));
-    diffuseColor.rgb*=.94+grain*.12;
+    if(terrainPosition.y<.28) discard;
+    float distanceToEye=length(cameraPosition-terrainPosition);
+    float detailFade=1.-smoothstep(300.,3500.,distanceToEye);
+    float detail=groundNoise(terrainPosition.xz*.025)*.6+groundNoise(terrainPosition.xz*.16)*.4;
+    diffuseColor.rgb*=.86+detail*.32*detailFade;
+    float luminance=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+    diffuseColor.rgb=mix(vec3(luminance),diffuseColor.rgb,.78);
     // A source-image coastal pixel may include sea colour while the elevation
     // sample includes shore; remove that blue fringe instead of raising water.
     float coastBlue=step(diffuseColor.r*1.3,diffuseColor.b)*step(diffuseColor.g*1.12,diffuseColor.b);
     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.14,.17,.13),coastBlue);
 
     // Gentle rock colour at steep slopes preserves the source imagery.
-    float rock=pow(1.-abs(normalize(vNormal).y),4.);
-    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.24,.25,.23),rock*.14);
+    float rock=pow(1.-abs(normalize(terrainNormal).y),4.);
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.24,.25,.23),rock*.38);
   `);
  };
  // Independent, indexed patches allow distant terrain to be frustum culled.

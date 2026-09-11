@@ -37,5 +37,55 @@ for side in [-1,1]:
  foil('Intake shadow',[(side*.7,1.65,-.1),(side*1.8,1.65,-.1),(side*1.8,1.65,-.7),(side*.7,1.65,-.7)],navy,.04)
 # High contrast upper spine remains visible against both sea and clouds.
 foil('Dorsal contrast stripe',[(-.3,1,.89),(.3,1,.89),(.45,-5,.72),(-.45,-5,.72)],navy,.025)
+
+# Small details change the silhouette and catch the sun without large textures.
+def line(name,points,r,m):
+ c=bpy.data.curves.new(name,'CURVE');c.dimensions='3D';c.bevel_depth=r;c.bevel_resolution=2;sp=c.splines.new('POLY');sp.points.add(len(points)-1)
+ for v,p in zip(sp.points,points):v.co=(*p,1)
+ o=bpy.data.objects.new(name,c);bpy.context.collection.objects.link(o);o.data.materials.append(m);return o
+for o in list(bpy.context.scene.objects):
+ if o.type=='MESH' and any(n in o.name for n in ['wing','tailplane','stabilizer','fuselage']):
+  mod=o.modifiers.new('Machined edge','BEVEL');mod.width=.045;mod.segments=3
+  o.modifiers.new('Surface normals','WEIGHTED_NORMAL')
+# Metallic petal nozzles around a dark throat, with concentric heat shields.
+for side in [-1,1]:
+ for y,r in [(-7.78,.69),(-8.19,.64),(-8.48,.56)]:
+  bpy.ops.mesh.primitive_torus_add(major_radius=r,minor_radius=.035,major_segments=40,minor_segments=8,location=(side*1.2,y,-.25),rotation=(math.pi/2,0,0));bpy.context.object.name='Exhaust heat shield';bpy.context.object.data.materials.append(steel)
+ for i in range(16):
+  a=i*math.tau/16;b=a+.135
+  mesh('Individual titanium nozzle petal',[(side*1.2+math.cos(a)*.69,-7.8,-.25+math.sin(a)*.61),(side*1.2+math.cos(b)*.69,-7.8,-.25+math.sin(b)*.61),(side*1.2+math.cos(b)*.56,-8.5,-.25+math.sin(b)*.5),(side*1.2+math.cos(a)*.56,-8.5,-.25+math.sin(a)*.5)],[(0,1,2,3)],steel)
+ # Thin, continuous control surface seams, leading-edge metal, and fasteners.
+ line('Wing leading edge',[(side*1.0,2.8,.17),(side*4,-.25,.23),(side*7.7,-4.8,.28)],.025,steel)
+ line('Flaperon hinge',[(side*1.9,-3.1,.23),(side*4,-3.8,.28),(side*6.65,-4.7,.30)],.021,navy)
+ for j in range(12):
+  u=j/11;sphere('Flush wing rivet',(side*(2+u*4.5),-3.18-u*1.4,.26),(.025,.025,.014),steel)
+ for j in range(6):
+  foil('Dorsal cooling louvre',[(side*.55,-1.8-j*.24,.81),(side*.95,-1.8-j*.24,.78),(side*.95,-1.92-j*.24,.78),(side*.55,-1.92-j*.24,.81)],navy,.005)
+ line('Canopy rail',[(side*.53,6,.93),(side*.78,4,1.0),(side*.59,2,1.0)],.045,steel)
+ # Paired recognition lights, integrated at the wing tips.
+ m=material('Navigation port' if side<0 else 'Navigation starboard',(1,.015,.008) if side<0 else (.03,.8,.35))
+ bs=m.node_tree.nodes.get('Principled BSDF');bs.inputs['Emission Color'].default_value=(*m.diffuse_color[:3],1);bs.inputs['Emission Strength'].default_value=3
+ sphere('Wing navigation light',(side*7.68,-4.83,.22),(.105,.15,.09),m)
+# Curved canopy bow and HUD glass inside the bubble.
+line('Canopy structural bow',[(math.cos(a)*.68,3,.75+math.sin(a)*.68) for a in [i*math.pi/32 for i in range(33)]],.045,navy)
+sphere('Ejection seat headrest',(0,3.05,1.0),(.27,.35,.32),navy)
+for x in [-.25,.25]:line('Pilot harness',[(x,3.03,.98),(x,3.5,.7)],.04,orange)
+# Roundels and a modest registration marking, laid onto the top surface.
+for side in [-1,1]:
+ bpy.ops.mesh.primitive_cylinder_add(vertices=48,radius=.33,depth=.008,location=(side*3.55,-1.3,.17));bpy.context.object.data.materials.append(navy)
+ bpy.ops.mesh.primitive_cylinder_add(vertices=48,radius=.2,depth=.012,location=(side*3.55,-1.3,.18));bpy.context.object.data.materials.append(pearl)
+bpy.ops.object.text_add(location=(-.34,-3.0,.92));o=bpy.context.object;o.name='Airframe registration';o.data.body='K-01';o.data.size=.22;o.data.extrude=.001;o.data.materials.append(navy)
+# Merge by material after applying bevels: detailed asset, few draw calls.
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.convert(target='MESH')
+groups={}
+for obj in list(bpy.context.scene.objects):
+ if obj.type=='MESH':groups.setdefault(obj.data.materials[0].name if obj.data.materials else 'none',[]).append(obj)
+for name,objects in groups.items():
+ bpy.ops.object.select_all(action='DESELECT')
+ for obj in objects:obj.select_set(True)
+ bpy.context.view_layer.objects.active=objects[0]
+ bpy.ops.object.join();bpy.context.object.name=name
+
 bpy.ops.export_scene.gltf(filepath=str(Path.cwd()/'public/models/fighter.glb'),export_format='GLB',export_yup=True,export_apply=True)
 print('FIGHTER_EXPORTED')

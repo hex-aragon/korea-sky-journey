@@ -4,7 +4,7 @@ A quiet Three.js flight game over Korea, with a satellite-textured terrain mesh,
 
 ## Play
 
-The default flight screen contains only a small city name and one **여행** button. Open it for altitude, automatic/direct flight, camera, sound and destination controls. Weather, quality and instructions expand only when requested. **구름 위로** climbs to 2,300 game metres and closes the panel. Start with automatic touring, or use arrow keys / WASD to take control. Up/down changes altitude; left/right turns. Space flies faster, C switches among chase/first-person/orbit views, P pauses, and H hides the interface. Touch flight buttons appear on small screens only during direct flight. The altitude slider inside the travel panel works in either flight mode. Automatic touring lingers at each city before continuing. Three cruising speeds and gradual altitude changes make it easier to enjoy the scenery. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
+The default is manual fighter flight with a small city label, speed readout, and **여행** menu. W/S changes pitch, A/D turns, Q/E rolls through 360 degrees, Shift increases throttle, X brakes, and Space engages the afterburner. Hold W for a complete loop. R recovers to level flight. C switches chase/cockpit/orbit views, P pauses, and H hides the interface. Touch controls appear on small screens after flight starts. **구름 위로** selects automatic flight and climbs to 3,300 game metres, above the 1,200–2,700 metre volumetric cloud layer. Altitude presets and the altitude slider enable automatic touring. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
 
 Route: Seoul → Incheon → Taean → Mokpo → Yeosu → Tongyeong → Busan → Pohang → Gangneung → Sokcho. The map is compressed for a relaxed journey; buildings, landmarks, terrain elevations and flight speeds are artistic approximations, not a flight simulator or navigational data.
 
@@ -17,7 +17,7 @@ The public Open-Meteo forecast endpoint provides current temperature, weather co
 - NASA Blue Marble cloud-free historical imagery, stored locally as a 4096 × 4096 WebP; this is not live or street-resolution imagery.
 - A 1025 × 1025 elevation grid assembled from 48 Mapzen Terrain Tiles, with a 512 × 512 terrain mesh split into frustum-culled patches.
 - Atmospheric sky scattering with a blue upper-sky grade, cloud self-shading and scattered cloud regions, warm sunset lighting, a Fresnel water shader with moving wave normals, and multisampled scene rendering. The separate built-in Sky cloud layer is disabled to avoid duplicate clouds.
-- An original Blender electric skywing with swept airfoil wings, raked tips, a butterfly tail, twin ducted fans, a panoramic canopy and copper/carbon detailing; original Blender broadleaf and Seoul tower assets.
+- An original Blender twin-engine fighter with detailed nozzles, canopy framing, control-surface seams, navigation lights and contrasting paint; a 3D cockpit with live instruments; original broadleaf and Seoul tower assets.
 - Terrain-conforming city districts, varied buildings with rooftop equipment, shadow maps, night windows, and the existing tourism landmarks.
 - Clouds render at 70% of output resolution with 56 ray steps in high quality; low quality uses 40% and 32 steps. Small screens initially select low quality. UI quality controls allow switching manually.
 
@@ -42,6 +42,7 @@ blender --background --python scripts/create_models.py
 blender --background --python scripts/create_aircraft.py
 blender --background --python scripts/create_city_landmark.py
 blender --background --python scripts/create_skywing.py
+blender --background --python scripts/create_fighter.py
 ```
 
 To regenerate geographic assets, install Pillow and NumPy in a separate Python environment, then run `python scripts/prepare_geography.py`. This downloads public imagery and elevation data during authoring; the deployed game loads only the bundled local assets.
@@ -69,7 +70,8 @@ Known limitations: GitHub Pages does not provide arbitrary response-header confi
 - Weather: [Open-Meteo](https://open-meteo.com/), weather data under CC BY 4.0; free endpoint is for non-commercial use and subject to provider limits.
 - Imagery: [NASA Blue Marble](https://earthobservatory.nasa.gov/features/BlueMarble) via [GIBS](https://nasa-gibs.github.io/gibs-api-docs/access-basics/). Historical satellite mosaic; resampled to the game region and compressed locally. NASA Earth Observatory imagery by Reto Stöckli, based on MODIS data; source imagery is not represented as a current observation.
 - Elevation: [Mapzen Terrain Tiles on AWS](https://registry.opendata.aws/terrain-tiles/), accessed 2026-09-11. Global SRTM/GMTED2010 terrain data courtesy of the U.S. Geological Survey; global ETOPO1 terrain data courtesy of NOAA. See [source attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md). Resampled and vertically scaled for gameplay.
-- GLB skywing, glider, broadleaf tree, Seoul tower, Namsan tower, pavilion and lighthouse: original Blender geometry generated for this project.
+- Sky HDRI: [Poly Haven Kloofendal Pure Sky](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky), Greg Zaal / Jarod Guest, CC0. Bundled locally; see `public/environment/ATTRIBUTION.md`.
+- GLB fighter, skywing, glider, broadleaf tree, Seoul tower, Namsan tower, pavilion and lighthouse: original Blender geometry generated for this project.
 - Technical reference: [Three.js volume cloud example](https://threejs.org/examples/webgl_volume_cloud.html). The game uses its own world-space, depth-aware cloud pass; no game screenshots, proprietary models or textures were copied from commercial flight games.
 
 ### Kestrel 전투기 자유 비행
@@ -86,3 +88,13 @@ Known limitations: GitHub Pages does not provide arbitrary response-header confi
 - 메뉴의 고도 선택은 자동 여행으로 전환합니다. 직접 조종 중에는 기수 방향을 따라 고도가 바뀝니다.
 
 쿼터니언 자세와 로컬 축 회전을 사용하므로 롤/피치 제한이 없습니다. 카메라도 기체의 상하 방향을 따라 회전합니다. 가속에 따른 시야 확장과 날개 궤적이 속도를 표현하며, 동작 줄이기 설정에서는 시야 확장을 끕니다. 지면/지도 경계에는 자동 회피가 적용됩니다. 실제 비행역학이나 전투 시뮬레이터가 아닌 아케이드 비행입니다.
+
+### 무료 브라우저 그래픽 구성
+
+- 게임은 Three.js/WebGL로 이용자 기기에서 렌더링하며 GitHub Pages 정적 배포를 유지합니다. GPU 서버, 유료 생성 API, 로그인, 결제 기능이 없습니다.
+- Poly Haven의 CC0 2K 하늘 HDRI를 저장소에 포함했습니다. Greg Zaal / Jarod Guest 제작. 출처와 해시는 `public/environment/ATTRIBUTION.md`에 있습니다. 이는 한국 실황 하늘 사진이 아닌 시각 연출용 환경입니다.
+- 먼 하늘은 HDRI, 통과 가능한 가까운 구름은 반복 경계가 없는 3D 볼륨, 높은 고도와 야간은 별도의 하늘 셰이더로 표현합니다. 밝은 낮이 기본이며 메뉴에서 현재 날씨를 선택할 수 있습니다.
+- C 키의 1인칭 시점에 실제 3D 조종석과 속도·고도·방위 계기를 추가했습니다. 엔진 및 바람 소리는 메뉴에서 켜며 Web Audio로 로컬 합성합니다.
+- 전투기 모델은 Blender MCP로 제작·수정하고 재질별로 병합했습니다. 테스트에서 12개 이하의 렌더링 단위, 6만 삼각형 미만, 2MB 미만을 검사합니다.
+- 지형 충돌 검사는 공간 격자를 사용합니다. 자동 품질은 모바일에서 낮은 설정으로 시작하고, 데스크톱에서 느린 프레임이 5초 누적되면 구름 해상도와 렌더 해상도를 줄입니다. 수동 고품질 선택도 가능합니다.
+- 지형·도시의 축척과 건물은 여전히 게임용으로 단순화되어 있으며, 실사 도시 복제나 실제 항공 훈련용 시뮬레이터는 아닙니다. 호스팅 서비스 및 무료 날씨 API의 이용 한도는 적용됩니다.
