@@ -4,13 +4,13 @@ A quiet Three.js flight game above a stylized Korea, with models authored in Ble
 
 ## Play
 
-Start with automatic touring, or use arrow keys / WASD to take control. Up/down changes altitude; left/right turns. Space flies faster, C switches among chase/first-person/orbit views, P pauses, and H hides the interface. Touch flight buttons are available on small screens. The altitude slider works in either flight mode. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
+Start with automatic touring, or use arrow keys / WASD to take control. Up/down changes altitude; left/right turns. Space flies faster, C switches among chase/first-person/orbit views, P pauses, and H hides the interface. Touch flight buttons are available on small screens. The altitude slider works in either flight mode. Automatic touring lingers at each city before continuing. Three cruising speeds and gradual altitude changes make it easier to enjoy the scenery. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
 
 Route: Seoul → Incheon → Taean → Mokpo → Yeosu → Tongyeong → Busan → Pohang → Gangneung → Sokcho. The map is compressed for a relaxed journey; buildings, landmarks, terrain elevations and flight speeds are artistic approximations, not a flight simulator or navigational data.
 
 ## Weather
 
-The public Open-Meteo forecast endpoint provides current temperature, weather code, cloud cover, wind direction, wind speed, and day/night state for ten fixed city coordinates. No location permissions, personal coordinates or API keys are used. Weather is fetched at launch and every ten minutes, with a ten-second timeout, one-minute manual refresh cooldown, schema validation, and a three-hour freshness limit. The interface explicitly labels demo conditions when current observations cannot be loaded. Ground-level wind is artistically limited for gentle flying; clouds and atmosphere respond to weather. Optional clear/cloudy/rain/sunset presets are explicitly demo modes.
+The public Open-Meteo forecast endpoint provides current temperature, weather code, cloud cover, wind direction, wind speed, and day/night state for ten fixed city coordinates. No location permissions, personal coordinates or API keys are used. Weather is fetched at launch and every ten minutes, with a ten-second timeout, one-minute manual refresh cooldown, schema validation, and a three-hour freshness limit. The interface explicitly labels demo conditions when current observations cannot be loaded. Ground-level wind is artistically limited for gentle flying; clouds and atmosphere respond to weather. Optional clear/cloudy/rain/sunset/night/snow presets are explicitly demo modes. Soft procedural cloud sprites drift with the wind and create mist when flying through them. Night scenes include stars, a moon and illuminated windows; rain and snow use separate particle effects.
 
 ## Development
 
@@ -30,7 +30,7 @@ To regenerate original GLB assets, run Blender from this directory:
 blender --background --python scripts/create_models.py
 ```
 
-The initial models were generated using the community Blender MCP server version 1.9.1 with telemetry disabled and its Blender socket bound to 127.0.0.1. The Blender authoring integration is local tooling and is not included in or called by the deployed game. Higgsfield is not a runtime dependency; its account connection was not completed during this build.
+The initial models were generated using the community Blender MCP server version 1.9.1 with telemetry disabled and its Blender socket bound to 127.0.0.1. The Blender authoring integration is local tooling and is not included in or called by the deployed game. Higgsfield is not a runtime dependency; its official MCP endpoint has been registered locally, but account authorization remains incomplete. No Higgsfield-generated assets are claimed or included.
 
 ## Security and privacy
 
