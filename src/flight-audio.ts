@@ -29,6 +29,14 @@ export class FlightAudio {
   this.enabled=on;if(!on)this.silence();
   await this.context.resume();return this.enabled;
  }
+ cue(kind:string){
+  const ctx=this.context;if(!ctx||!this.master||!this.enabled)return;
+  const tone=ctx.createOscillator(),gain=ctx.createGain(),t=ctx.currentTime;
+  const frequency=kind==='warning'?880:kind==='locked'?1320:kind==='evaded'?660:kind==='hit'?95:190;
+  tone.type=kind==='hit'||kind==='launch'?'sawtooth':'sine';tone.frequency.setValueAtTime(frequency,t);tone.frequency.exponentialRampToValueAtTime(kind==='launch'?65:frequency*.7,t+.16);
+  gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(kind==='warning'?.22:.15,t+.008);gain.gain.exponentialRampToValueAtTime(.001,t+.19);
+  tone.connect(gain);gain.connect(this.master);tone.start(t);tone.stop(t+.2);tone.onended=()=>{tone.disconnect();gain.disconnect();};
+ }
  update(speed:number,boost:number,throttle:number,paused:boolean,cockpit:boolean,load=1,roll=0,gust=0){
   const ctx=this.context;if(!ctx||!this.master)return;const t=ctx.currentTime,velocity=Math.min(1,speed/540),strain=Math.min(1,(load-1)/6);
   this.master.gain.setTargetAtTime(this.enabled&&!paused?this.volume*(cockpit?.55:.8):0,t,.15);

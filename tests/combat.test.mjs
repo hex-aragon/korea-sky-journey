@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Quaternion, Vector3 } from 'three';
+import { Combat, COMBAT_RULES } from '../src/combat.mjs';
+import { createAttitude, stepJet } from '../src/jet-flight.mjs';
+const pilot=()=>({x:0,y:1500,z:0,speed:280,throttle:.65,boost:0,attitude:createAttitude(),recovery:null});
+const run=(c,p,seconds,input={})=>{for(let i=0;i<Math.round(seconds/.01);i++){stepJet(p,input,.01,{wind:0,direction:0},()=>0);c.update(p,.01);}};
+const setup=()=>{const p=pilot(),c=new Combat();c.reset(p);return {p,c};};
+test('healing has no enemies, missiles, damage or firing',()=>{const {p,c}=setup();c.reset(p,false);run(c,p,30);assert.equal(c.enemies.length,0);assert.equal(c.fire(p),false);assert.equal(c.dead,false);assert.equal(c.threat,null);});
+test('nose lock takes time, fires homing missile, scores hit and respawns',()=>{const {p,c}=setup();assert.equal(c.fire(p),false);run(c,p,.5);assert.equal(c.fire(p),false);run(c,p,.3);assert.equal(c.lock,COMBAT_RULES.lockSeconds);assert.equal(c.fire(p),true);assert.equal(c.fire(p),false);run(c,p,1.5);assert.equal(c.score,1);assert.equal(c.enemies[0].alive,false);run(c,p,4);assert.equal(c.enemies[0].alive,true);assert.equal(c.enemies.length,3);});
+test('turning away breaks lock and rejects firing',()=>{const {p,c}=setup();run(c,p,.8);p.attitude.setFromAxisAngle(new Vector3(0,1,0),Math.PI/2);c.update(p,.01);assert.equal(c.target,-1);assert.equal(c.lock,0);assert.equal(c.fire(p),false);});
+test('AI warns before killing straight flight at the three second deadline',()=>{const {p,c}=setup();run(c,p,8.1);assert.ok(c.threat);assert.equal(c.dead,false);c.startThreat(c.enemies[2],p);run(c,p,2.99);assert.equal(c.dead,false);run(c,p,.01);assert.equal(c.dead,true);assert.equal(c.fire(p),false);assert.equal(c.threat,null);});
+test('real pitch maneuver and full roll each escape before deadline',()=>{for(const input of [{pitch:1},{roll:1},{turn:1}]){const {p,c}=setup();c.startThreat(c.enemies[2],p);run(c,p,1.5,input);assert.equal(c.threat,null);assert.equal(c.dead,false);assert.equal(c.dodges,1);assert.ok(c.attackIn>0);}});
+test('brief key wiggles do not count as sustained evasion',()=>{const {p,c}=setup();c.startThreat(c.enemies[2],p);for(let i=0;i<15;i++){run(c,p,.1,{roll:1});run(c,p,.1,{roll:-1});}assert.equal(c.dead,true);assert.equal(c.dodges,0);});
+test('evasion crossing the deadline does not rescue a late maneuver',()=>{const {p,c}=setup();c.startThreat(c.enemies[2],p);run(c,p,2.99);p.attitude.setFromAxisAngle(new Vector3(0,1,0),Math.PI/2);c.update(p,.02);assert.equal(c.dead,true);assert.equal(c.dodges,0);});
+test('pause freezes warning and reset clears every combat entity',()=>{const {p,c}=setup();c.startThreat(c.enemies[2],p);const remaining=c.threat.remaining;for(let i=0;i<200;i++)c.update(p,0);assert.equal(c.threat.remaining,remaining);run(c,p,3);assert.equal(c.dead,true);c.reset(p);assert.equal(c.dead,false);assert.equal(c.threat,null);assert.equal(c.missiles.length,0);assert.equal(c.bursts.length,0);assert.equal(c.score,0);assert.equal(c.attackIn,8);});
+test('long frame is bounded and equivalent quaternion signs do not fake rolls',()=>{const {p,c}=setup();c.startThreat(c.enemies[2],p);p.attitude=new Quaternion(0,0,0,-1);c.update(p,10);assert.ok(c.threat.remaining>=2.95);assert.equal(c.dodges,0);assert.equal(c.threat.roll,0);});
