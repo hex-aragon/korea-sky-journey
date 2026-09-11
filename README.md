@@ -71,3 +71,18 @@ Known limitations: GitHub Pages does not provide arbitrary response-header confi
 - Elevation: [Mapzen Terrain Tiles on AWS](https://registry.opendata.aws/terrain-tiles/), accessed 2026-09-11. Global SRTM/GMTED2010 terrain data courtesy of the U.S. Geological Survey; global ETOPO1 terrain data courtesy of NOAA. See [source attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md). Resampled and vertically scaled for gameplay.
 - GLB skywing, glider, broadleaf tree, Seoul tower, Namsan tower, pavilion and lighthouse: original Blender geometry generated for this project.
 - Technical reference: [Three.js volume cloud example](https://threejs.org/examples/webgl_volume_cloud.html). The game uses its own world-space, depth-aware cloud pass; no game screenshots, proprietary models or textures were copied from commercial flight games.
+
+### Kestrel 전투기 자유 비행
+
+기본 모드는 직접 조종입니다. Blender로 제작한 오리지널 쌍발 전투기(`scripts/create_fighter.py`, `public/models/fighter.glb`)를 사용합니다. 밝은 세라믹 도색, 어두운 날개 패널, 주황색 식별 무늬와 두 엔진의 불꽃으로 지형과 기체를 구분합니다.
+
+- W/S 또는 ↑/↓: 기수 올리기/내리기. W를 계속 누르면 360° 루프.
+- A/D 또는 ←/→: 좌우 선회. Q/E: 좌우 360° 롤.
+- Shift: 스로틀 증가. X: 스로틀 감소 및 에어브레이크.
+- Space: 누르는 동안 애프터버너, 최고 약 1,944 km/h.
+- R: 현재 방향을 유지하며 수평 자세로 복귀.
+- C: 시점 전환, P: 일시정지, H: 화면 UI 숨기기.
+- 모바일: 방향·롤·BOOST·수평 버튼을 누르고 조종.
+- 메뉴의 고도 선택은 자동 여행으로 전환합니다. 직접 조종 중에는 기수 방향을 따라 고도가 바뀝니다.
+
+쿼터니언 자세와 로컬 축 회전을 사용하므로 롤/피치 제한이 없습니다. 카메라도 기체의 상하 방향을 따라 회전합니다. 가속에 따른 시야 확장과 날개 궤적이 속도를 표현하며, 동작 줄이기 설정에서는 시야 확장을 끕니다. 지면/지도 경계에는 자동 회피가 적용됩니다. 실제 비행역학이나 전투 시뮬레이터가 아닌 아케이드 비행입니다.

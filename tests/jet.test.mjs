@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Vector3} from 'three';
+import {createAttitude,stepJet} from '../src/jet-flight.mjs';
+const wind={wind:0,direction:0};
+const make=()=>({x:0,y:3000,z:0,speed:280,throttle:.65,boost:0,attitude:createAttitude(),recovery:null});
+const run=(s,input,seconds)=>{for(let t=0;t<seconds;t+=.01)stepJet(s,input,.01,wind,()=>-10000);return s;};
+test('pitch flies a complete loop without attitude clamps',()=>{const s=make();run(s,{pitch:1},Math.PI/1.2);assert.ok(new Vector3(0,1,0).applyQuaternion(s.attitude).y<-.99);run(s,{pitch:1},Math.PI/1.2);assert.ok(s.attitude.angleTo(createAttitude())<.025);});
+test('roll goes through inverted and returns upright',()=>{const s=make();run(s,{roll:1},Math.PI/2.75);assert.ok(new Vector3(0,1,0).applyQuaternion(s.attitude).y<-.99);run(s,{roll:1},Math.PI/2.75);assert.ok(s.attitude.angleTo(createAttitude())<.06);});
+test('boost accelerates and brake decelerates',()=>{const s=make();run(s,{boost:true},3);assert.ok(s.speed>530);run(s,{brake:true,throttle:-1},4);assert.ok(s.speed<125);assert.equal(s.throttle,0);});
+test('mixed input stays normalized and recovery levels aircraft',()=>{const s=make();run(s,{pitch:1,roll:.5,turn:.4},2);assert.ok(Math.abs(s.attitude.length()-1)<1e-12);run(s,{recover:true},3);assert.ok(new Vector3(0,1,0).applyQuaternion(s.attitude).y>.999);});
+test('fast flight samples ground, clamps dt and recovers from ground',()=>{const s=make();s.y=60;s.speed=540;s.attitude.setFromAxisAngle(new Vector3(1,0,0),-1);let samples=0;stepJet(s,{},10,wind,()=>{samples++;return 20;});assert.ok(samples>=3);assert.ok(s.y>=75);assert.ok(s.recovery);assert.ok(Math.abs(s.z)<30);});
