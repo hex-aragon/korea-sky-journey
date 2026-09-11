@@ -4,7 +4,7 @@ A quiet Three.js flight game over Korea, with a satellite-textured terrain mesh,
 
 ## Play
 
-Start with automatic touring, or use arrow keys / WASD to take control. Up/down changes altitude; left/right turns. Space flies faster, C switches among chase/first-person/orbit views, P pauses, and H hides the interface. Touch flight buttons are available on small screens. The altitude slider works in either flight mode. Automatic touring lingers at each city before continuing. Three cruising speeds and gradual altitude changes make it easier to enjoy the scenery. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
+The default flight screen contains only a small city name and one **여행** button. Open it for altitude, automatic/direct flight, camera, sound and destination controls. Weather, quality and instructions expand only when requested. **구름 위로** climbs to 2,300 game metres and closes the panel. Start with automatic touring, or use arrow keys / WASD to take control. Up/down changes altitude; left/right turns. Space flies faster, C switches among chase/first-person/orbit views, P pauses, and H hides the interface. Touch flight buttons appear on small screens only during direct flight. The altitude slider inside the travel panel works in either flight mode. Automatic touring lingers at each city before continuing. Three cruising speeds and gradual altitude changes make it easier to enjoy the scenery. Selecting a city moves to its airspace. Visiting cities leaves device-local travel stamps.
 
 Route: Seoul → Incheon → Taean → Mokpo → Yeosu → Tongyeong → Busan → Pohang → Gangneung → Sokcho. The map is compressed for a relaxed journey; buildings, landmarks, terrain elevations and flight speeds are artistic approximations, not a flight simulator or navigational data.
 
@@ -16,8 +16,8 @@ The public Open-Meteo forecast endpoint provides current temperature, weather co
 
 - NASA Blue Marble cloud-free historical imagery, stored locally as a 4096 × 4096 WebP; this is not live or street-resolution imagery.
 - A 1025 × 1025 elevation grid assembled from 48 Mapzen Terrain Tiles, with a 512 × 512 terrain mesh split into frustum-culled patches.
-- Atmospheric sky scattering, cloud self-shading, warm sunset lighting, a Fresnel water shader with moving wave normals, and multisampled scene rendering.
-- A new Blender sailplane with airfoil wings, canopy, cockpit details, winglets and composite/glass materials; original Blender broadleaf and Seoul tower assets.
+- Atmospheric sky scattering with a blue upper-sky grade, cloud self-shading and scattered cloud regions, warm sunset lighting, a Fresnel water shader with moving wave normals, and multisampled scene rendering. The separate built-in Sky cloud layer is disabled to avoid duplicate clouds.
+- An original Blender electric skywing with swept airfoil wings, raked tips, a butterfly tail, twin ducted fans, a panoramic canopy and copper/carbon detailing; original Blender broadleaf and Seoul tower assets.
 - Terrain-conforming city districts, varied buildings with rooftop equipment, shadow maps, night windows, and the existing tourism landmarks.
 - Clouds render at 70% of output resolution with 56 ray steps in high quality; low quality uses 40% and 32 steps. Small screens initially select low quality. UI quality controls allow switching manually.
 
@@ -41,6 +41,7 @@ To regenerate original GLB assets, run Blender from this directory:
 blender --background --python scripts/create_models.py
 blender --background --python scripts/create_aircraft.py
 blender --background --python scripts/create_city_landmark.py
+blender --background --python scripts/create_skywing.py
 ```
 
 To regenerate geographic assets, install Pillow and NumPy in a separate Python environment, then run `python scripts/prepare_geography.py`. This downloads public imagery and elevation data during authoring; the deployed game loads only the bundled local assets.
@@ -68,5 +69,5 @@ Known limitations: GitHub Pages does not provide arbitrary response-header confi
 - Weather: [Open-Meteo](https://open-meteo.com/), weather data under CC BY 4.0; free endpoint is for non-commercial use and subject to provider limits.
 - Imagery: [NASA Blue Marble](https://earthobservatory.nasa.gov/features/BlueMarble) via [GIBS](https://nasa-gibs.github.io/gibs-api-docs/access-basics/). Historical satellite mosaic; resampled to the game region and compressed locally. NASA Earth Observatory imagery by Reto Stöckli, based on MODIS data; source imagery is not represented as a current observation.
 - Elevation: [Mapzen Terrain Tiles on AWS](https://registry.opendata.aws/terrain-tiles/), accessed 2026-09-11. Global SRTM/GMTED2010 terrain data courtesy of the U.S. Geological Survey; global ETOPO1 terrain data courtesy of NOAA. See [source attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md). Resampled and vertically scaled for gameplay.
-- GLB glider, broadleaf tree, Seoul tower, Namsan tower, pavilion and lighthouse: original Blender geometry generated for this project.
+- GLB skywing, glider, broadleaf tree, Seoul tower, Namsan tower, pavilion and lighthouse: original Blender geometry generated for this project.
 - Technical reference: [Three.js volume cloud example](https://threejs.org/examples/webgl_volume_cloud.html). The game uses its own world-space, depth-aware cloud pass; no game screenshots, proprietary models or textures were copied from commercial flight games.

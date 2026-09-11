@@ -11,7 +11,7 @@ export class Atmosphere {
  private composite:THREE.ShaderMaterial;
  private quad:FullScreenQuad;
  private time=0;
- private cover=.4;
+ private cover=.22;
  private drift=new THREE.Vector2();
  constructor(private renderer:THREE.WebGLRenderer){
   this.sceneTarget=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4});this.sceneTarget.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
@@ -22,7 +22,7 @@ export class Atmosphere {
   }
   const tex=new THREE.Data3DTexture(data,size,size,size);tex.format=THREE.RedFormat;tex.minFilter=tex.magFilter=THREE.LinearFilter;tex.wrapS=tex.wrapT=tex.wrapR=THREE.RepeatWrapping;tex.unpackAlignment=1;tex.needsUpdate=true;
   const vertexShader=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
-  this.cloud=new THREE.ShaderMaterial({uniforms:{depthMap:{value:this.sceneTarget.depthTexture},noiseMap:{value:tex},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},eye:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3(-.6,.4,-.6)},coverage:{value:.4},night:{value:0},sunset:{value:0},drift:{value:this.drift},steps:{value:48}},vertexShader,depthWrite:false,depthTest:false,
+  this.cloud=new THREE.ShaderMaterial({uniforms:{depthMap:{value:this.sceneTarget.depthTexture},noiseMap:{value:tex},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},eye:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3(-.6,.4,-.6)},coverage:{value:.22},night:{value:0},sunset:{value:0},drift:{value:this.drift},steps:{value:48}},vertexShader,depthWrite:false,depthTest:false,
   fragmentShader:`precision highp sampler3D;
   varying vec2 vUv;uniform sampler2D depthMap;uniform sampler3D noiseMap;uniform mat4 inverseProjection,cameraWorld;uniform vec3 eye,sunDirection;uniform float coverage,night,sunset;uniform vec2 drift;uniform int steps;
   float density(vec3 p){
@@ -33,7 +33,10 @@ export class Atmosphere {
     float shape=broad*.62+detail*.38;
     float profile=smoothstep(0.,.14,h)*(1.-smoothstep(.48,1.,h));
     float threshold=mix(.66,.42,coverage)+h*.18-.065;
-    return clamp((shape-threshold)*8.,0.,1.)*profile;
+    float patchNoise=texture(noiseMap,vec3(q.x*.85,.36,q.z*.85)).r;
+    float patchThreshold=mix(.60,.35,coverage);
+    float coverageMask=smoothstep(patchThreshold,patchThreshold+.12,patchNoise);
+    return clamp((shape-threshold)*8.,0.,1.)*profile*coverageMask;
   }
   void main(){
     vec4 v=inverseProjection*vec4(vUv*2.-1.,1.,1.);vec3 ray=normalize((cameraWorld*vec4(normalize(v.xyz/v.w),0.)).xyz);
@@ -52,9 +55,9 @@ export class Atmosphere {
       if(d>.002){
         float shadow=density(p+sunDirection*160.)*.7+density(p+sunDirection*420.)*.3;
         float h=clamp((p.y-850.)/1050.,0.,1.);
-        vec3 base=mix(vec3(.43,.52,.64),vec3(1.15,1.16,1.16),clamp(h*.48+(1.-shadow)*.65,0.,1.));
-        base+=vec3(1.,.92,.79)*towardSun*.45*(1.-shadow);
-        base=mix(base,base*vec3(1.1,.67,.4),sunset*.7);
+        vec3 base=mix(vec3(.36,.47,.64),vec3(1.35,1.32,1.25),clamp(h*.56+(1.-shadow)*.62,0.,1.));
+        base+=vec3(1.,.92,.79)*towardSun*.75*(1.-shadow);
+        base=mix(base,base*vec3(1.15,.64,.38),sunset*.8);
         base=mix(base,base*vec3(.035,.06,.10),night*.98);
         float opacity=1.-exp(-d*stride*.007);
         light+=trans*opacity*base;trans*=1.-opacity;

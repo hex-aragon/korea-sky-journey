@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
+import { styleSky } from './sky-style';
 import { loadTerrain, terrainHeight } from './terrain';
 import { createOcean } from './ocean';
 export { terrainHeight } from './terrain';
@@ -12,7 +13,7 @@ function rng(seed:number){return()=>{seed=(Math.imul(seed,1664525)+1013904223)|0
 export class World{
  scene=new THREE.Scene();sky=new Sky();sun=new THREE.DirectionalLight('#fff1d4',2.3);hemi=new THREE.HemisphereLight('#c8e8ff','#7c9c72',2.4);ocean:THREE.Mesh;sunDirection=new THREE.Vector3(-.6,.4,-.6).normalize();aircraft=new THREE.Group();landmarks:THREE.Group[]=[];obstacles:{x:number;z:number;w:number;d:number;h:number}[]=[];rain:THREE.LineSegments;snow:THREE.Points;stars:THREE.Points;moon:THREE.Mesh;private cityMaterial:THREE.MeshStandardMaterial|undefined;ready:Promise<void>;cameraCity=0;private time=0;
  constructor(){
-  this.scene.fog=new THREE.FogExp2('#adc8dc',.000042);this.scene.add(this.hemi,this.sun);this.sun.position.set(-4000,8000,-3000);this.sky.scale.setScalar(180000);this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('vec4( texColor, 1.0 )','vec4( texColor * 0.42, 1.0 )');this.scene.add(this.sky);this.sky.material.uniforms.turbidity.value=3;this.sky.material.uniforms.rayleigh.value=1.4;this.sky.material.uniforms.mieCoefficient.value=.003;this.sky.material.uniforms.mieDirectionalG.value=.8;
+  this.scene.fog=new THREE.FogExp2('#adc8dc',.000042);this.scene.add(this.hemi,this.sun);this.sun.position.set(-4000,8000,-3000);this.sky.scale.setScalar(180000);styleSky(this.sky);this.scene.add(this.sky);this.sky.material.uniforms.turbidity.value=3;this.sky.material.uniforms.rayleigh.value=1.4;this.sky.material.uniforms.mieCoefficient.value=.003;this.sky.material.uniforms.mieDirectionalG.value=.8;
   this.ocean=createOcean();this.scene.add(this.ocean);const random=rng(129);
   const rainG=new THREE.BufferGeometry(),rainPos=new Float32Array(600*6);
   for(let i=0;i<600;i++){const x=(random()-.5)*600,y=(random()-.5)*600,z=(random()-.5)*600;rainPos.set([x,y,z,x-1,y+12,z],i*6);}
@@ -60,13 +61,13 @@ export class World{
  // Coastal wind farms.
  [2].forEach(i=>{const p=positions[i];for(let j=0;j<4;j++){const g=new THREE.Group();g.position.set(p.x+(j-3)*80,terrainHeight(p.x+(j-3)*80,p.z+290),p.z+290);this.box(g,0,35,0,3,70,3,'#f5f1df');for(let b=0;b<3;b++){const blade=this.box(g,0,80,0,3,45,1,'#f5f1df');blade.position.set(Math.sin(b*Math.PI*2/3)*20,70+Math.cos(b*Math.PI*2/3)*20,0);blade.rotation.z=-b*Math.PI*2/3;}this.scene.add(g);}});
  }
- async loadModels(){const loader=new GLTFLoader();const base=import.meta.env.BASE_URL;const plane=await loader.loadAsync(base+'models/glider.glb');this.aircraft.add(plane.scene);this.aircraft.scale.setScalar(2.2);this.aircraft.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});const load=async(file:string,indexes:number[])=>{const data=await loader.loadAsync(base+'models/'+file+'.glb');for(const i of indexes)this.landmarks[i].add(data.scene.clone());};const tower=await loader.loadAsync(base+'models/seoul-tower.glb');const tp=geo(127.1025,37.5126);tower.scene.position.set(tp.x,terrainHeight(tp.x,tp.z),tp.z);tower.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});this.scene.add(tower.scene);this.obstacles.push({x:tp.x,z:tp.z,w:22,d:22,h:tower.scene.position.y+205});await Promise.all([load('namsan',[0]),load('pavilion',[3,5,8]),load('lighthouse',[2,7,9])]);}
+ async loadModels(){const loader=new GLTFLoader();const base=import.meta.env.BASE_URL;const plane=await loader.loadAsync(base+'models/skywing.glb');this.aircraft.add(plane.scene);this.aircraft.scale.setScalar(2.5);this.aircraft.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});const load=async(file:string,indexes:number[])=>{const data=await loader.loadAsync(base+'models/'+file+'.glb');for(const i of indexes)this.landmarks[i].add(data.scene.clone());};const tower=await loader.loadAsync(base+'models/seoul-tower.glb');const tp=geo(127.1025,37.5126);tower.scene.position.set(tp.x,terrainHeight(tp.x,tp.z),tp.z);tower.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});this.scene.add(tower.scene);this.obstacles.push({x:tp.x,z:tp.z,w:22,d:22,h:tower.scene.position.y+205});await Promise.all([load('namsan',[0]),load('pavilion',[3,5,8]),load('lighthouse',[2,7,9])]);}
  ground(x:number,z:number){let y=terrainHeight(x,z);for(const o of this.obstacles)if(Math.abs(x-o.x)<o.w+16&&Math.abs(z-o.z)<o.d+16)y=Math.max(y,o.h);const tower=this.landmarks[0].position;if(Math.hypot(x-tower.x,z-tower.z)<50)y=Math.max(y,tower.y+220);return y;}
  update(dt:number,weather:{cloud:number;wind:number;direction:number;day:boolean;code:number},position:THREE.Vector3,sunset=false){
   this.time+=dt;const night=!weather.day,overcast=weather.cloud/100;
   this.sunDirection.setFromSphericalCoords(1,THREE.MathUtils.degToRad(night?100:sunset?86:66),THREE.MathUtils.degToRad(235));
   this.sun.position.copy(position).addScaledVector(this.sunDirection,5000);this.sun.target.position.copy(position);this.sun.target.updateMatrixWorld();
-  this.sky.material.uniforms.sunPosition.value.copy(this.sunDirection);this.sky.material.uniforms.turbidity.value=2.2+overcast*3;this.sky.material.uniforms.rayleigh.value=night?.25:1.8;
+  this.sky.material.uniforms.sunPosition.value.copy(this.sunDirection);this.sky.material.uniforms.turbidity.value=1.5+overcast*2.8;this.sky.material.uniforms.rayleigh.value=night?.25:2.5;
   this.sun.color.set(sunset?'#ffd0a0':'#fff4e2');
   this.sun.intensity=THREE.MathUtils.damp(this.sun.intensity,night?.06:sunset?2.5:3.3-overcast*1.6,1,dt);
   this.hemi.intensity=THREE.MathUtils.damp(this.hemi.intensity,night?.18:.85-overcast*.2,1,dt);
