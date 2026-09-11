@@ -13,7 +13,18 @@ test('weather validates dates and clamps external values',()=>{const now=Date.pa
 test('weather labels match common codes',()=>{assert.equal(weatherName(0),'맑음');assert.equal(weatherName(3),'구름 많음');assert.equal(weatherName(63),'비');});
 test('damping does not overshoot',()=>{assert(damp(0,10,3,.05)>0);assert(damp(0,10,3,.05)<10);});
 
-test('all four Blender GLB assets are valid self-contained models',async()=>{const {readFile}=await import('node:fs/promises');for(const name of ['glider','namsan','pavilion','lighthouse']){const b=await readFile(new URL(`../public/models/${name}.glb`,import.meta.url));assert.equal(b.toString('ascii',0,4),'glTF');assert.equal(b.readUInt32LE(4),2);assert.equal(b.readUInt32LE(8),b.length);const len=b.readUInt32LE(12),json=JSON.parse(b.toString('utf8',20,20+len));assert(json.meshes.length>0);assert(json.buffers.every(buffer=>!buffer.uri));assert(!json.images?.some(image=>image.uri?.startsWith('http')));}});
+test('all Blender GLB assets are valid self-contained models',async()=>{const {readFile}=await import('node:fs/promises');for(const name of ['glider','namsan','pavilion','lighthouse','broadleaf','seoul-tower']){const b=await readFile(new URL(`../public/models/${name}.glb`,import.meta.url));assert.equal(b.toString('ascii',0,4),'glTF');assert.equal(b.readUInt32LE(4),2);assert.equal(b.readUInt32LE(8),b.length);const len=b.readUInt32LE(12),json=JSON.parse(b.toString('utf8',20,20+len));assert(json.meshes.length>0);assert(json.buffers.every(buffer=>!buffer.uri));assert(!json.images?.some(image=>image.uri?.startsWith('http')));}});
 
 test('altitude slider moves at a bounded rate without overshooting',async()=>{const {approachAltitude}=await import('../src/flight.mjs');assert.equal(approachAltitude(400,2400,.05),406);assert.equal(approachAltitude(400,100,.05),394);assert.equal(approachAltitude(400,402,.05),402);});
 test('cruise speed selection changes manual flight speed',()=>{const slow=initial(),fast=initial();for(let i=0;i<600;i++){stepFlight(slow,{...input,cruise:35},1/60,wind,()=>0);stepFlight(fast,{...input,cruise:100},1/60,wind,()=>0);}assert(slow.speed<36);assert(fast.speed>99);});
+
+test('geographic asset uses a north-to-south elevation grid with valid land and sea',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const meta=JSON.parse(await readFile(new URL('../public/geography/metadata.json',import.meta.url)));
+ const data=await readFile(new URL('../public/geography/korea-elevation.bin',import.meta.url));
+ assert.equal(data.length,meta.size*meta.size*2);
+ const sample=(lon,lat)=>{const x=Math.round((lon-meta.west)/(meta.east-meta.west)*(meta.size-1)),y=Math.round((meta.north-lat)/(meta.north-meta.south)*(meta.size-1));return data.readInt16LE((y*meta.size+x)*2);};
+ assert(sample(128.465,38.118)>1200,'Seoraksan must remain a mountain, not a flipped ocean sample');
+ assert(sample(130,37)<0,'East Sea must remain below sea level');
+ assert(sample(126.978,37.5665)>0&&sample(126.978,37.5665)<200,'central Seoul terrain is low-lying land');
+});

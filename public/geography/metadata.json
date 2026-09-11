@@ -1,0 +1,11 @@
+{
+  "west": 124,
+  "south": 33,
+  "east": 131,
+  "north": 40,
+  "size": 1025,
+  "encoding": "int16-le-metres",
+  "imagery": "NASA Blue Marble via GIBS, historical cloud-free mosaic",
+  "terrain": "Mapzen Terrain Tiles; global SRTM/GMTED2010 courtesy of USGS; ETOPO1 courtesy of NOAA",
+  "verticalScale": 0.12
+}

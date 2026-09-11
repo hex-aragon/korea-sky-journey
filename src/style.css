@@ -7,3 +7,8 @@
 .primary{color:var(--ink)}body:not(.started) .destination,body:not(.started) .altitude-rail,body:not(.started) .keys-hint{display:none}body:not(.started) #shade{background:linear-gradient(90deg,#153b56a6,transparent 76%),linear-gradient(0deg,#214b6333,transparent 25%)}body.started .brand,body.started .destination{color:#204c60;text-shadow:0 1px 12px #ffffff66}body.started .brand small,body.started .destination p{color:#456878}body.started .brand-mark{border-color:#42718488}body:not(.started) .intro{top:43%;transform:translateY(-30%)}
 
 body.started.night .brand,body.started.night .destination{color:#edf6fa;text-shadow:0 2px 12px #071c30}body.started.night .brand small,body.started.night .destination p{color:#c6dce7}body.started.night .brand-mark{border-color:#c6dce788}
+
+/* Keep the landscape unobstructed; flight instruments sit at the periphery. */
+body.started .brand,body.started .destination{color:#f2f7fa;text-shadow:0 2px 12px #152d49b3}body.started .brand small,body.started .destination p{color:#e0eaf0}body.started .brand-mark{border-color:#d5e3ed99}
+body.started .destination h2{font-size:29px}body.started .destination{top:119px}
+@media(min-width:701px){.map-card{width:165px;bottom:130px;opacity:.86}.map-card canvas{width:163px;height:177px}.map-title{padding:12px 12px 0;font-size:11px}.map-footer{font-size:11px;padding:11px}.bottom{bottom:25px;padding:11px 8px;background:rgba(232,241,244,.8)}.topbar{top:24px}.weather-card{background:rgba(231,242,247,.83)}}
