@@ -13,3 +13,9 @@ test('detailed fighter stays inside browser mesh and download budgets',async()=>
  let triangles=0;for(const p of primitives)triangles+=(p.indices===undefined?gltf.accessors[p.attributes.POSITION].count:gltf.accessors[p.indices].count)/3;
  assert.ok(triangles<60000,`${triangles} triangles`);
 });
+
+test('every selectable aircraft is local, self-contained and within rendering budget',async()=>{
+ const {aircraftChoices,aircraftById}=await import('../src/aircraft.mjs');
+ assert.equal(aircraftById('../../secret'),undefined);assert.equal(new Set(aircraftChoices.map(a=>a.id)).size,3);
+ for(const a of aircraftChoices){const b=await readFile(new URL('../public/models/'+a.file,import.meta.url));assert.equal(b.toString('utf8',0,4),'glTF');const gltf=JSON.parse(b.toString('utf8',20,20+b.readUInt32LE(12)));assert.ok(gltf.buffers.every(b=>!b.uri));const primitives=gltf.meshes.flatMap(m=>m.primitives);assert.ok(primitives.length<=12);let triangles=0;for(const p of primitives)triangles+=(p.indices===undefined?gltf.accessors[p.attributes.POSITION].count:gltf.accessors[p.indices].count)/3;assert.ok(triangles<60000);assert.ok(b.length<2*1024*1024);assert.ok(a.engines.length>=1&&a.engines.length<=2);}
+});

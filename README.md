@@ -15,7 +15,7 @@ The public Open-Meteo forecast endpoint provides current temperature, weather co
 ## Graphics
 
 - NASA Blue Marble cloud-free historical imagery, stored locally as a 4096 × 4096 WebP; this is not live or street-resolution imagery.
-- A 1025 × 1025 elevation grid assembled from 48 Mapzen Terrain Tiles, with a 512 × 512 terrain mesh split into frustum-culled patches.
+- A 1025 × 1025 elevation grid assembled from 48 Mapzen Terrain Tiles, with near 1024 × 1024 / far 512 × 512 terrain detail in independently culled LOD patches with matching boundary vertices.
 - Atmospheric sky scattering with a blue upper-sky grade, cloud self-shading and scattered cloud regions, warm sunset lighting, a Fresnel water shader with moving wave normals, and multisampled scene rendering. The separate built-in Sky cloud layer is disabled to avoid duplicate clouds.
 - An original Blender twin-engine fighter with detailed nozzles, canopy framing, control-surface seams, navigation lights and contrasting paint; a 3D cockpit with live instruments; original broadleaf and Seoul tower assets.
 - Terrain-conforming city districts, varied buildings with rooftop equipment, shadow maps, night windows, and the existing tourism landmarks.
@@ -116,3 +116,15 @@ Known limitations: GitHub Pages does not provide arbitrary response-header confi
 - 조준 완료, 발사, 격추, 회피, 접근 경고음은 기존 음향 설정을 따릅니다. 전투 화면은 조준선, 적기 표시, 점수, 발사 버튼만 추가하고 접근 중에만 위험 경고를 표시합니다.
 
 테스트는 조준·추적 명중·재장전, AI 경고, 3초 경계의 실패 판정, 실제 선회·롤 회피, 일시정지, 재시작과 힐링 모드 분리를 검증합니다. 적기는 기존 오리지널 Blender 전투기 모델을 공유하고 재질을 구분합니다. 새 모델 다운로드, 외부 API, 유료 서버 또는 멀티플레이 연결이 없습니다.
+
+### 기체와 근거리 풍경 개선
+
+- 시작 화면과 여행 메뉴에서 Kestrel, Viper 단발 경전투기, Specter 스텔스형의 세 기체를 고릅니다. 선택한 모델은 같은 출처의 로컬 GLB로 불러오며 캐시합니다. 빠르게 다른 기체를 골라도 마지막 선택을 우선합니다. 비행/전투 성능은 같고 모델과 노즐·날개 궤적 위치가 달라집니다. 조종석은 공통입니다.
+- 신규 Viper/Specter는 설치된 Blender 5.2를 별도 백그라운드 프로세스로 실행해 `scripts/create_fleet.py`로 제작했습니다. 이번 작업 시 Blender MCP 소켓은 연결되지 않았습니다. 기존 사용자의 Blender 장면을 수정하지 않았습니다.
+- 실루엣 참고: [미 공군 F-16](https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/), [미 공군 F-22](https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104506/f-22-raptor/). 독자 제작한 게임용 형상이며 공식 기체 모델이나 정확한 치수 복제는 아닙니다.
+- 지형은 근거리 세분화, 경계가 맞는 LOD, 촬영 기반 지면 텍스처와 노멀 디테일을 사용합니다. [Poly Haven Aerial Rocks 02](https://polyhaven.com/a/aerial_rocks_02), [Aerial Grass Rock](https://polyhaven.com/a/aerial_grass_rock), Rob Tuytel, CC0. 출처는 `public/materials/ATTRIBUTION.md`에 기록했습니다. 위성영상·고도 원본의 해상도를 높인 것은 아닙니다.
+- 해안의 얕은 물과 제한된 포말, 도시 간선도로와 차선, 숲 군집, 컨테이너 터미널·크레인, 활주로·격납고·관제탑을 추가했습니다. 공항은 서해의 가상 비행용 시설이며 실제 인천공항 배치나 좌표를 복제하지 않았습니다. 메뉴의 ‘공항 저공 비행’으로 접근할 수 있습니다.
+- 하늘과 해안 조명 참고: [Poly Haven Wilderness Beach](https://polyhaven.com/a/wilderness_beach). 기존 번들 HDRI와 통과 가능한 볼륨 구름을 유지했습니다. [Three.js terrain example](https://threejs.org/examples/webgl_geometry_terrain.html)도 지형 표현 참고로 검토했습니다.
+- 게임 버튼·캔버스에서 텍스트 선택, 드래그, 컨텍스트 메뉴, iOS 길게 누르기 메뉴를 억제했습니다. 비행 버튼은 pointerdown 즉시 반응하고 눌린 상태가 표시되며, 손을 떼거나 포커스를 잃으면 해제합니다. 설정의 입력·링크는 유지합니다.
+
+도시와 시설은 게임용으로 재구성한 풍경이며 포토그래메트리나 실사 도시 복제는 아닙니다. 새 유료 서비스나 서버를 추가하지 않았습니다.
