@@ -14,7 +14,7 @@ export function createScenery(scene:THREE.Scene,obstacles:{x:number;z:number;w:n
   let previous:THREE.Vector3|undefined;
   for(let n=0;n<=60;n++){const t=(n/60-.5)*1350,off=lane*125;const x=p.x+(axis?t:off),z=p.z+(axis?off:t),y=terrainHeight(x,z);
    if(y<1||y>95){previous=undefined;continue;}const current=new THREE.Vector3(x,y+.7,z);
-   if(previous){const i=roads.length/3,w=lane===0?5:3,dx=axis?0:w,dz=axis?w:0;roads.push(previous.x-dx,previous.y,previous.z-dz,previous.x+dx,previous.y,previous.z+dz,x-dx,y+.7,z-dz,x+dx,y+.7,z+dz);indices.push(i,i+2,i+1,i+1,i+2,i+3);if(n%2===0)stripes.push(previous.x,previous.y+.06,previous.z,x,y+.76,z);}
+   if(previous){const i=roads.length/3,w=lane===0?5:3,dx=axis?0:w,dz=axis?w:0;roads.push(previous.x-dx,previous.y,previous.z-dz,previous.x+dx,previous.y,previous.z+dz,x-dx,y+.7,z-dz,x+dx,y+.7,z+dz);if(axis)indices.push(i,i+1,i+2,i+1,i+3,i+2);else indices.push(i,i+2,i+1,i+1,i+2,i+3);if(n%2===0)stripes.push(previous.x,previous.y+.06,previous.z,x,y+.76,z);}
    previous=current;
   }
  }});
