@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Combat, COMBAT_RULES } from './combat.mjs';
+import { Combat } from './combat.mjs';
 
 export class CombatView {
  private root = new THREE.Group();
@@ -53,14 +53,14 @@ export class CombatView {
    let x=point.x,y=point.y;
    if(!onScreen){x=local.x;y=local.y;if(Math.hypot(x,y)<.001)y=-1;const k=Math.max(Math.abs(x)/.83,Math.abs(y)/.7);x/=k;y/=k;}
    marker.style.left=`${THREE.MathUtils.clamp((x*.5+.5)*w,90,w-90)}px`;marker.style.top=`${THREE.MathUtils.clamp((-y*.5+.5)*h,140,h-(w<700?280:110))}px`;
-   const locked=combat.target===i&&combat.lock>=COMBAT_RULES.lockSeconds;
+   const locked=combat.target===i&&combat.lock>=combat.rules.lockSeconds;
    marker.classList.toggle('locked',locked);marker.classList.toggle('offscreen',!onScreen);
    const arrow=['→','↗','↑','↖','←','↙','↓','↘'][THREE.MathUtils.euclideanModulo(Math.round(Math.atan2(y,x)/(Math.PI/4)),8)];
    marker.textContent=`${onScreen?(locked?'◆':'◇'):arrow} ${locked?'조준 완료':local.z>0?'뒤쪽 적기':'적기'} ${Math.round(enemy.position.distanceTo(player))}m`;
   });
-  const nose=player.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(attitude),1200).project(camera);
+  const nose=player.clone().addScaledVector(combat.aimDirection||new THREE.Vector3(0,0,-1).applyQuaternion(attitude),1200).project(camera);
   const reticle=document.getElementById('reticle')!;
   reticle.style.left=`${(nose.x*.5+.5)*w}px`;reticle.style.top=`${(-nose.y*.5+.5)*h}px`;
-  reticle.classList.toggle('locked',combat.lock>=COMBAT_RULES.lockSeconds);
+  reticle.classList.toggle('locked',combat.lock>=combat.rules.lockSeconds);
  }
 }
